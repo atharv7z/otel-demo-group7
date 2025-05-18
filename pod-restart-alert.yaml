@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pod-restart-alert
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    
+spec:
+  groups:
+    - name: pod-alerts
+      rules:
+        - alert: PodRestartCountExceeded
+          expr: increase(kube_pod_container_status_restarts_total[3m]) > 0
+          for: 10s
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod {{ $labels.pod }} has restarted"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} restarted more than once in 3 minutes."
