@@ -51,7 +51,38 @@ pipeline {
       }
     }
 
+    stage('Install OpenTelemetry via Helm') {
+      steps {
+        script {
+          sh '''
+            helm repo add opentelemetry-demo https://open-telemetry.github.io/opentelemetry-helm-charts || true
+            for i in {1..3}; do helm repo update && break || sleep 10; done
+
+            helm repo update
+
+            helm upgrade --install otel-demo open-telemetry/opentelemetry-demo \
+              --namespace otel-helm \
+              --create-namespace \
+              -f chart/values.yaml \
+              --set image.repository=$IMAGE_NAME \
+              --set image.tag=$IMAGE_TAG \
+              --wait
+          '''
+        }
+      }
+    }
+
     
+
+    stage('Validate Deployment') {
+      steps {
+        script {
+          sh '''
+            kubectl rollout status deployment/otel-demo -n otel-helm
+          '''
+        }
+      }
+    }
   }
 
   post {
